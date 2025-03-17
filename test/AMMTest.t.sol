@@ -57,7 +57,7 @@ contract AMMTest is Test {
         vm.prank(USER);
         console2.log(amm.getReserve1() * AMT_T2);
         console2.log(amm.getReserve2() * AMT_T1);
-        vm.expectRevert(AMM.AMM__ProductRuleFailed.selector);
+        vm.expectRevert(AMM.AMM__RatioChanges.selector);
         amm.addLiquidity((AMT_T1 + 17), AMT_T2);
     }
 
@@ -88,7 +88,7 @@ contract AMMTest is Test {
 
     function testRevertIfSwapAmountIsZero() public {
         vm.prank(USER);
-        vm.expectRevert(AMM.AMM__AmountZeroOrNegative.selector);
+        vm.expectRevert(AMM.AMM__AmountZero.selector);
         amm.swap1_2(0);
     }
 }

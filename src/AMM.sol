@@ -7,8 +7,8 @@ import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol
 
 contract AMM is Ownable, ReentrancyGuard {
     /////////////ERRORS/////////////
-    error AMM__ProductRuleFailed();
-    error AMM__AmountZeroOrNegative();
+    error AMM__RatioChanges();
+    error AMM__AmountZero();
     error AMM__InvalidToken();
     error AMM_ZeroShares();
 
@@ -37,7 +37,7 @@ contract AMM is Ownable, ReentrancyGuard {
         totalSupply -= _amount;
     }
 
-    function _update(uint256 _reserve1, uint256 _reserve2) public {
+    function _update(uint256 _reserve1, uint256 _reserve2) internal {
         reserve1 = _reserve1;
         reserve2 = _reserve2;
     }
@@ -63,7 +63,7 @@ contract AMM is Ownable, ReentrancyGuard {
         //checking the AMM Constant Product Rule :
         if (reserve1 > 0 || reserve2 > 0) {
             if (reserve1 * _amount2 != reserve2 * _amount1) {
-                revert AMM__ProductRuleFailed();
+                revert AMM__RatioChanges();
             }
         }
 
@@ -91,6 +91,9 @@ contract AMM is Ownable, ReentrancyGuard {
             revert AMM_ZeroShares();
         }
 
+        uint256 balance1 = token1.balanceOf(address(this));
+        uint256 balance2 = token2.balanceOf(address(this));
+
         // calculating amount of tokens for withdrawal
         uint256 token1_out = (reserve1 * _shares) / totalSupply;
         uint256 token2_out = (reserve2 * _shares) / totalSupply;
@@ -99,7 +102,7 @@ contract AMM is Ownable, ReentrancyGuard {
         token2.transfer(msg.sender, token2_out);
 
         _burn(msg.sender, _shares);
-        _update(token1.balanceOf(address(this)), token2.balanceOf(address(this)));
+        _update(balance1 - token1_out , balance2 - token2_out );
 
         return (token1_out, token2_out);
     }
@@ -113,8 +116,8 @@ contract AMM is Ownable, ReentrancyGuard {
             revert AMM__InvalidToken();
         }
 
-        if (_amountIn == 0 || _amountIn < 0) {
-            revert AMM__AmountZeroOrNegative();
+        if (_amountIn == 0 ) {
+            revert AMM__AmountZero();
         }
         token1.transferFrom(msg.sender, address(this), _amountIn);
 
@@ -140,7 +143,7 @@ contract AMM is Ownable, ReentrancyGuard {
         }
 
         if (_amountIn == 0 || _amountIn < 0) {
-            revert AMM__AmountZeroOrNegative();
+            revert AMM__AmountZero();
         }
         token2.transferFrom(msg.sender, address(this), _amountIn);
 
